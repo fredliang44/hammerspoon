@@ -12,26 +12,35 @@ function ssidChangedCallback()
     -- Identify home WiFi network
     if table.contains(availableNetworks, config.wifi.homeSSID) then
         
-        -- try ssh router to get mentohust login
-        hs.wifi.associate(config.wifi.homeSSID, config.wifi.homePass )
-
         -- confirm connected wifi in home
-        repeat
+        while(newSSID ~= config.wifi.homeSSID) 
+        do
+            print("connect homeSSID")
             newSSID = hs.wifi.currentNetwork()
+            hs.wifi.associate(config.wifi.homeSSID, config.wifi.homePass)
+
+            -- waiting for connection established
+            os.execute("sleep 2")
+
+            -- break when connection failed
             if not table.contains(hs.wifi.availableNetworks(), config.wifi.homeSSID) then
                 break
             end
-        until
-            newSSID == config.wifi.homeSSID
+        end 
      
-        -- get mentohust authorization
-        local ret = os.execute("ssh root@192.168.1.1 \"mentohust -p"..config.wifi.hustPass.."\"");
-        if ret ~= 0 then
-            print("the system shell is available, ret = "..ret.."\n\n")
+        -- check network connection 
+        code, body, htable = hs.http.get("https://baidu.com", nil)
+        if code >= 200 and code <= 300 then
+            print('network status: OK')
+            return
         else
-            print("the system shell is not available, ret = "..ret.."\n\n")
+            print('network status: Failed, trying to reconnect')
+            -- get mentohust authorization
+            os.execute("ssh root@192.168.1.1 \"mentohust -k\"");
+            os.execute("ssh root@192.168.1.1 \"mentohust -p"..config.wifi.hustPass.."\"");
         end
 
+       
         -- alert and log status
         hs.alert("Detected at Home")
         print("ssid = "..(newSSID))
