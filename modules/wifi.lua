@@ -8,10 +8,11 @@ function ssidChangedCallback()
 
     -- rewrite nil to empty string for log
     if (newSSID == nil) then newSSID = "" end
+    if (availableNetworks == nil) then availableNetworks = {} end
 
     -- Identify home WiFi network
     if table.contains(availableNetworks, config.wifi.homeSSID) then
-        
+        hs.audiodevice.defaultOutputDevice():setVolume(25)
         -- confirm connected wifi in home
         while(newSSID ~= config.wifi.homeSSID) 
         do
@@ -20,7 +21,7 @@ function ssidChangedCallback()
             hs.wifi.associate(config.wifi.homeSSID, config.wifi.homePass)
 
             -- waiting for connection established
-            os.execute("sleep 2")
+            os.execute("sleep 2") 
 
             -- break when connection failed
             if not table.contains(hs.wifi.availableNetworks(), config.wifi.homeSSID) then
@@ -28,7 +29,11 @@ function ssidChangedCallback()
             end
         end 
      
-        -- check network connection 
+
+        -- Identify home WiFi network
+        elseif table.contains(availableNetworks, config.wifi.homeSSID) then
+
+        -- Check network connection 
         code, body, htable = hs.http.get("https://baidu.com", nil)
         if code >= 200 and code <= 300 then
             print('network status: OK')
@@ -39,7 +44,6 @@ function ssidChangedCallback()
             os.execute("ssh root@192.168.1.1 \"mentohust -k\"");
             os.execute("ssh root@192.168.1.1 \"mentohust -p"..config.wifi.hustPass.."\"");
         end
-
        
         -- alert and log status
         hs.alert("Detected at Home")
@@ -47,12 +51,13 @@ function ssidChangedCallback()
 
     -- Identify school WIFI network
     elseif (not table.contains(availableNetworks, config.wifi.homeSSID)) and table.contains(availableNetworks, config.wifi.schoolSSID) then
-        -- hs.audiodevice.defaultOutputDevice():setVolume(0)
+        hs.audiodevice.defaultOutputDevice():setVolume(0)
         hs.alert("Detected at School")
         print("ssid = "..(newSSID))
 
     -- Identify outside WIFI Inetwork
-    elseif (not table.contains(availableNetworks, config.wifi.homeSSID)) and (not table.contains(availableNetworks, config.wifi.schoolSSID)) then
+    elseif isempty(availableNetworks) or (not table.contains(availableNetworks, config.wifi.homeSSID)) and (not table.contains(availableNetworks, config.wifi.schoolSSID)) then
+        hs.audiodevice.defaultOutputDevice():setVolume(0)
         hs.alert("Detected at Outside")
         print("ssid = "..(newSSID))
     end
