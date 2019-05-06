@@ -28,25 +28,63 @@ function ssidChangedCallback()
                 break
             end
         end 
-     
-
-        -- Identify home WiFi network
-        elseif table.contains(availableNetworks, config.wifi.homeSSID) then
 
         -- Check network connection 
-        code, body, htable = hs.http.get("https://baidu.com", nil)
-        if code >= 200 and code <= 300 then
+        if  checkNetworks() then
+            hs.alert('network status: OK')
+            print('network status: OK')
+            return
+            
+        else
+            hs.alert('network status: Failed, trying to reconnect')
+            print('network status: Failed, trying to reconnect')
+
+            -- get mentohust authorization
+            os.execute("ssh root@192.168.1.1 \"mentohust -k\"");
+            os.execute("ssh root@192.168.1.1 \"mentohust -p"..config.wifi.hustPass.."\"");
+
+            -- waiting for connection established
+            os.execute("sleep 2") 
+        end
+ 
+        print("ssid = "..(newSSID))
+
+
+    -- Identify studio WiFi network
+    elseif table.contains(availableNetworks, config.wifi.studioSSID) then
+        -- alert and log status
+        hs.alert("Detected at Studio")
+        
+        hs.audiodevice.defaultOutputDevice():setVolume(0)
+        -- confirm connected wifi in home
+        while(newSSID ~= config.wifi.studioSSID) 
+        do
+            print("connect studioSSID")
+            newSSID = hs.wifi.currentNetwork()
+            -- hs.wifi.associate(config.wifi.studioSSID, config.wifi.studioPass)
+
+            -- waiting for connection established
+            os.execute("sleep 2") 
+
+            -- break when connection failed
+            if not table.contains(hs.wifi.availableNetworks(), config.wifi.studioSSID) then
+                break
+            end
+        end
+
+
+        if checkNetworks() then
             print('network status: OK')
             return
         else
             print('network status: Failed, trying to reconnect')
             -- get mentohust authorization
             os.execute("ssh root@192.168.1.1 \"mentohust -k\"");
-            os.execute("ssh root@192.168.1.1 \"mentohust -p"..config.wifi.hustPass.."\"");
+            os.execute("ssh root@192.168.1.1 \"mentohust -u"..config.wifi.hustAccount.." -p"..config.wifi.hustPass.."\"");
+            print("ssh root@192.168.1.1 \"mentohust -b1 -u"..config.wifi.hustAccount.." -p"..config.wifi.hustPass.."\"")
+            os.execute("sleep 2") 
+
         end
-       
-        -- alert and log status
-        hs.alert("Detected at Home")
         print("ssid = "..(newSSID))
 
     -- Identify school WIFI network
@@ -61,8 +99,14 @@ function ssidChangedCallback()
         hs.alert("Detected at Outside")
         print("ssid = "..(newSSID))
     end
+
 end
 
+function checkNetworks()
+    code, body, headers = hs.http.get("https://www.baidu.com", nil)
+    if (code >= 200 and code < 300) then return true
+    else return false end
+end 
 
 wifiWatcher = hs.wifi.watcher.new(ssidChangedCallback)
 wifiWatcher:start()

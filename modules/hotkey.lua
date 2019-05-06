@@ -1,7 +1,12 @@
+local config = require "modules/config"
+
 hs.hotkey.bind({'cmd', 'shift'}, 'h', function()
-    -- for k, v in ipairs(hs.wifi.availableNetworks())  do
-    --     hs.alert(v)
-    -- end
-    -- hs.alert(#hs.wifi.availableNetworks())
-    hs.alert(table.contains(hs.wifi.availableNetworks(), "HUST_WIRELESS_AUTO"))
+    hs.alert(checkNetworks())
 end)
+
+
+function checkNetworks()
+    code, body, headers = hs.http.get("https://www.baidu.com", nil)
+    if (code >= 200 and code < 300) then return true
+    else return false end
+end 

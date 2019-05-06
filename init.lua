@@ -11,6 +11,7 @@ require "modules/auto_reload"
 -- require "modules/weather"
 
 function table.contains(table, element)
+  if table == nil then return false end
     for _, value in pairs(table) do
       if value == element then
         return true
@@ -22,3 +23,5 @@ function table.contains(table, element)
 function isempty(s)
   return s == nil or s == ''
 end
+
+
